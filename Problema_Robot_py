@@ -1,0 +1,88 @@
+from simpleai.search import (
+    SearchProblem,
+    breadth_first,
+    depth_first,
+    limited_depth_first,
+    uniform_cost,
+    iterative_limited_depth_first,
+    greedy,
+    astar,
+)
+from simpleai.search.viewers import BaseViewer, WebViewer
+
+#Variables globales (No mutan)
+Mundo = (0,0),(0,1),(1,0),(1,1),(2,0),(2,1)
+
+
+class problemRobot(SearchProblem):
+    ubicacionServidores = [("A1",(2,1)),("A2",(2,1)),("A3",(0,0)),("P1",(0,0)),("P2",(1,0)),("P3",(1,0))]
+    posRobot = (1,1)
+    carga = False
+    #estadoInicial = (pos_robot,False,)
+
+    def action(self,state):
+        acciones = []
+        moviemientos =  [(-1,0)
+                        ,(1,0)
+                        ,(0,-1)
+                        ,(0,1)]
+
+        posRobot,carga,ubicacionServidores = state
+        for dx,dy in moviemientos:
+            #La nueva pos va ser el resultado de sumar los movimientos, dx mueve la fila y dy la columna
+            nuevaposición = (posRobot[0]+dx,posRobot[1] + dy)
+            if nuevaposición  in Mundo:
+                acciones.append("Mover",nuevaposición) 
+        
+        if (carga == False ):
+            for nombre,ubicacionServidor in ubicacionServidores:
+                if posRobot == ubicacionServidor and self.esta_bien_ubicado(nombre,ubicacionServidor,ubicacionServidores):
+                    acciones.append("Cargar servidor", nombre)
+        if carga == True: 
+            if (posRobot and self.esta_bien_ubicado(nombre,posRobot,ubicacionServidores)):
+                acciones.append("Descargar servidor", nombre)
+
+    def cost(self, state1, action, state2):
+        self.posRobot, lleva_servidor, self.ubicacionServidores = state1   # cambia nombres si usas otros
+        if action == 'Cargar servidor':          # o 'Levantar Servidor'
+            return 200
+        if action == 'Descargar Servidor':           # o 'Descargar Servidor'
+            return 120
+        # movimiento normal
+        if lleva_servidor:
+            return 180
+        else:
+            return 60
+        
+    def result(self, state, action):
+        robot, llevaServidor, servidores = state
+
+        if action == 'Levantar Servidor':          # o el texto que uses
+        # quita el servidor de la lista y marca que va cargado
+            lista = list(servidores)
+            lista.remove(robot)                    # el robot debe estar sobre uno
+            return (robot, True, tuple(lista))
+
+        elif action == 'Descargar Servidor':       # otro texto concreto
+        # deja el servidor en el punto de entrega y queda vaciado
+         return (robot, None, servidores)
+
+        else:                                      # movimiento normal
+            dx, dy = action
+            nueva = (robot[0] + dx, robot[1] + dy)
+            return (nueva, llevaServidor, servidores)
+        
+        
+    def obtener_pareja(self,id_servidor):
+    # Si es P1 devuelve A1, si es A1 devuelve P1, etc.
+        letra = id_servidor[0] # 'P' o 'A'
+        numero = id_servidor[1] # '1', '2' o '3'
+        otra_letra = 'A' if letra == 'P' else 'P'
+        return otra_letra + numero
+    
+    def esta_bien_ubicado(self,id_serv, pos_actual, todos_los_servidores):
+        pareja_id = self.obtener_pareja(id_serv)
+        for id_s, pos_s in todos_los_servidores:
+            if id_s == pareja_id:
+                return pos_actual == pos_s # Está bien si está en la misma pos que su pareja
+        return False
