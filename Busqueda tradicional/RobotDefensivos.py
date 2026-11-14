@@ -20,9 +20,11 @@ from simpleai.search import (
 )
 from simpleai.search.viewers import BaseViewer, WebViewer
 base = (0,1)
-muestras = list((0,2),(0,3),(2,0),(3,1))
-initial_state= ((0,1),0,(()),100) #PosRobot,bool de muestra, tupla con la muestra que recolectó y por ultimo la bateria en %
+muestrasPendientes = ((0,2),(0,3),(2,0),(3,1))
+initial_state= ((0,1),0,(muestrasPendientes),100) #PosRobot,bool de muestra, tupla con la muestra que recolectó y por ultimo la bateria en %
 class problemaSeguridad(SearchProblem):
+
+    
 
     def actions(self,state):
         posx,posy = state[0]
@@ -38,29 +40,28 @@ class problemaSeguridad(SearchProblem):
             if 0 <= posx + x <= 3 and 0 <= posy + y <= 3 and state[3] > 10:
                 movimientosDisponibles.append(("Mover",(x,y))) #MOVimientos ortodiagonales dentro del mapade 4 X 4
 
-        if state[0] in muestras and state[3]> 25:
-            movimientosDisponibles.append("Tomar Muestra",(state[0]))   ##Tomo la muestra y considero que la pos del robot es donde está la muestra 
+        if state[0] in state[2] and state[3]> 25:
+            movimientosDisponibles.append(("Tomar Muestra",state[0]))   ##Tomo la muestra y considero que la pos del robot es donde está la muestra 
         if state[0] == base and state[1] == 1 and state[3] > 5: ##Si estoy en la base y tengo muestra la dejo
-            movimientosDisponibles.append("Dejar Muestra")
+            movimientosDisponibles.append(("Dejar Muestra",None))
         if state[0] == base:
-            movimientosDisponibles.append("Recargar Bateria")
+            movimientosDisponibles.append(("Recargar Bateria",None))
 
         return movimientosDisponibles
         
     def result(self, state, action):
 
         acc,mov = action
-        posRobot  = list(state[0])
+        posRobot  = state[0]
         carga = state[1]
-        muestraCargada = state[2]
+        pendientes = state[2]
         bateria = state[3]
 
         if acc == "Mover":
             posRobot = (posRobot[0] + mov[0],posRobot[1] + mov[1])
             bateria -= 10
         elif acc == "Tomar Muestra":
-            muestraCargada = posRobot #Seteo la muestra
-            muestras.remove(posRobot) ##Saco de pool de muestras la muestrra
+            pendientes = tuple(m for m in pendientes if m != posRobot) ##Saco de pool de muestras la muestrra
             bateria -= 25
             carga = 1
         elif acc == "Dejar Muestra":
@@ -69,7 +70,7 @@ class problemaSeguridad(SearchProblem):
         else: ##Por defecto la unica acción que queda es recargar
             bateria = 100
 
-        return tuple((posRobot),carga,muestraCargada,bateria)
+        return (posRobot,carga,pendientes,bateria)
 
     def cost (self,state,action,state2):
         acc,mov = action
@@ -83,13 +84,22 @@ class problemaSeguridad(SearchProblem):
         else:
             return 30
     def is_goal(self, state):
-        return muestras.len()==0 and state[0] == base
+        return state[2] ==() and state[0] == base and state[1] == 0
     
     def heuristic(self, state):
+        pos, carga, pendientes, _ = state
 
-        return super().heuristic(state)
+        if not pendientes:
+            distBase = abs(pos[0] - base[0]) + abs(pos[1] - base[1])
+            return distBase * 5 + (10 if carga else 0)
+
+        minDist = min(abs(pos[0] - m[0]) + abs(pos[1] - m[1]) for m in pendientes)
+        maxBase = max(abs(m[0] - base[0]) + abs(m[1] - base[1]) for m in pendientes)
+
+        return (minDist + maxBase) * 5 + 15 * len(pendientes) + 10
 
 problem = problemaSeguridad(initial_state)  
-result = astar(problem,graph_search=True,viewer=WebViewer())
-    ##print(result.path())
-
+result = astar(problem,graph_search=True)
+for accion, estado in result.path():
+    print(accion, estado)
+print("Costo:", result.cost)
