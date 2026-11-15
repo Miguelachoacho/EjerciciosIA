@@ -40,7 +40,7 @@ class problemaSeguridad(SearchProblem):
             if 0 <= posx + x <= 3 and 0 <= posy + y <= 3 and state[3] > 10:
                 movimientosDisponibles.append(("Mover",(x,y))) #MOVimientos ortodiagonales dentro del mapade 4 X 4
 
-        if state[0] in state[2] and state[3]> 25:
+        if state[0] in state[2] and state[1] == 0 and state[3] > 25:
             movimientosDisponibles.append(("Tomar Muestra",state[0]))   ##Tomo la muestra y considero que la pos del robot es donde está la muestra 
         if state[0] == base and state[1] == 1 and state[3] > 5: ##Si estoy en la base y tengo muestra la dejo
             movimientosDisponibles.append(("Dejar Muestra",None))
