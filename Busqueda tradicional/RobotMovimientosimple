@@ -1,0 +1,55 @@
+from simpleai.search.viewers import WebViewer
+from simpleai.search import (SearchProblem,breadth_first,
+                             depth_first,limited_depth_first,iterative_limited_depth_first
+                             ,astar)
+
+Inicial_State = (0,0)
+paredes = ((1,1),(1,2),(2,1))
+meta = (3,3)
+class problemaRobot(SearchProblem):
+
+
+    def actions (self,state):
+        accionesPosibles = []
+        posRobotX,posRobotY=state
+        movimientos = [
+        (0,1), # Derecha
+        (0,-1), #Izq
+        (1,0), #Abajo
+        (-1,0) # Arriba
+        ]
+
+        ##Movimiento
+
+        for x,y in movimientos:
+            if 0<= posRobotX + x <= 3 and 0 <= posRobotY + y <= 3 and (x,y) not in paredes:
+                accionesPosibles.append(("Moverse",(x,y)))
+
+        return accionesPosibles
+
+    
+    def cost (self,state,action,state2):
+        return 1
+
+    def is_goal(self,state):
+        return state == meta
+
+    def result (self,state,action):
+        acc,obj = action
+        x,y = state
+        if acc == "Moverse":
+            state = (x + obj[0], y+obj[1])
+
+        return state
+
+    def heuristic(self, state):
+        x,y = state
+        mx,my = meta
+        distancia = abs(x-mx) + abs(y-my)
+        return distancia
+
+problem = problemaRobot(Inicial_State)  
+result = iterative_limited_depth_first(problem,graph_search=True)
+for accion, estado in result.path():
+    print(accion, estado)
+print("Costo:", result.cost)

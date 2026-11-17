@@ -52,7 +52,6 @@ def robotPuerta(puerta):
 for robotInPuerta in puertas:
     restricciones.append((tuple(variables), robotPuerta(robotInPuerta)))
 
-problema = CspProblem(variables, dominios, restricciones)
-print(backtrack(problema))
+
 
 
