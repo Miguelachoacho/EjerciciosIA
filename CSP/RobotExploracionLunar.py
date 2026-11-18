@@ -16,7 +16,6 @@ for var in variables:
         ("Antena",7),
         ("Espacio Muestra",5)
     ]
-print (variables)
 restricciones = []
 
 def pesoMaximo (variables,values):
@@ -40,12 +39,21 @@ def telescopioConTaladro(variable, values):
 restricciones.append((variables,telescopioConTaladro))
 
 def antenaSinBateria(variable, values):
-    n = [v[0] for v in values]
-    return not ("Antena" in n and "Bateria Nuclear" in n)
+    nombres = {nombre for nombre, peso in values}
+    antena_instalada = "Antena" in nombres
+    bateria_instalada = "Bateria Nuclear" in nombres
 
-def laserConBateria(variable, values):
-    n = [v[0] for v in values]
-    return "Laser" not in n or "Bateria Nuclear" in n
+    return not (antena_instalada and bateria_instalada)
+
+
+def laserConbateria(variable, values):
+    nombres = {nombre for nombre, peso in values}
+    laser_instalado = "Laser" in nombres
+
+    if not laser_instalado:
+        return True
+
+    return "Bateria Nuclear" in nombres
 
 CIENCIA = {"Microscopio", "Laser", "Taladro muestras", "Espacio Muestra"}
 def alMenosUnaCiencia(variable, values):
@@ -53,7 +61,7 @@ def alMenosUnaCiencia(variable, values):
 
 restricciones += [
     (variables, antenaSinBateria),
-    (variables, laserConBateria),
+    (variables, laserConbateria),
     (variables, alMenosUnaCiencia),
 ]
 
