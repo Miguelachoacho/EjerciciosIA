@@ -78,18 +78,27 @@ def build_camp(camp_size,habs,generators,labs,deposits,airlocks,craters):
     for lab1,lab2 in combinations(varLab,2):
          constrains.append(((lab1,lab2),lab_adj_dep))
 
-    def salida_hab(variable,values):
-        row,col = values[0]
-        valoresPosibles = set(values[1:])
-        adyacentes = (row +1 ,col),(row-1 ,col),(row ,col + 1),(row ,col - 1)
-        contador = 0
-        for valor in valoresPosibles:
-             if valor not in adyacentes:
-                 contador += 1
-        return contador > 1
-    
+    def hab_con_salida(variables, values):
+        filaHab, colHab = values[0]        # posición del hábitat
+        ocupadas = set(values[1:])         # posición de los demás módulos
+
+        adyacentes = [ ## Me fijo los adjayentes ortogonales
+            (filaHab + 1, colHab),  
+            (filaHab - 1, colHab),
+            (filaHab, colHab + 1),
+            (filaHab, colHab - 1),
+        ]
+
+        for fila, columna in adyacentes:
+            enMapa = 0 <= fila < row and 0 <= columna < col
+            if enMapa and (fila, columna) not in craters and (fila, columna) not in ocupadas:
+                return True   #Si algo alguna libre retorna true
+        return False
+
     for hab in varHabs:
-        constrains.append(((hab),salida_hab))
+        otrasVariables = [var for var in variables if var != hab]
+        constrains.append((tuple([hab] + otrasVariables), hab_con_salida))
+
 
     print("Restricciones", len(constrains))
     print("Variables:", variables)
